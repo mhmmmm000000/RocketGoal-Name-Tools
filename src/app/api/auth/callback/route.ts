@@ -1,8 +1,24 @@
 import { NextResponse } from "next/server";
 
-const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || "";
-const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || "";
-const REDIRECT_URI = process.env.GITHUB_REDIRECT_URI || "";
+// Read from multiple possible env var names so users don't have to rename
+const OAUTH_CLIENT_ID =
+  process.env.OAUTH_CLIENT_ID ||
+  process.env.CLIENT_ID ||
+  process.env.GITHUB_CLIENT_ID ||
+  process.env.GH_CLIENT_ID ||
+  "";
+const OAUTH_CLIENT_SECRET =
+  process.env.OAUTH_CLIENT_SECRET ||
+  process.env.CLIENT_SECRET ||
+  process.env.GITHUB_CLIENT_SECRET ||
+  process.env.GH_CLIENT_SECRET ||
+  "";
+const OAUTH_REDIRECT_URI =
+  process.env.OAUTH_REDIRECT_URI ||
+  process.env.REDIRECT_URI ||
+  process.env.GITHUB_REDIRECT_URI ||
+  process.env.GH_REDIRECT_URI ||
+  "";
 const REQUIRED_USER = "mhmmmm000000";
 const REQUIRED_REPO = "rocketgoal-name-tools";
 
@@ -19,6 +35,16 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL("/?auth=no_code", request.url));
   }
 
+  // Debug: if secrets aren't set, redirect with helpful error
+  if (!OAUTH_CLIENT_ID || !OAUTH_CLIENT_SECRET) {
+    console.error("Missing OAuth env vars", {
+      hasClientId: !!OAUTH_CLIENT_ID,
+      hasClientSecret: !!OAUTH_CLIENT_SECRET,
+      hasRedirectUri: !!OAUTH_REDIRECT_URI,
+    });
+    return NextResponse.redirect(new URL("/?auth=not_configured", request.url));
+  }
+
   try {
     // Exchange code for access token
     const tokenRes = await fetch("https://github.com/login/oauth/access_token", {
@@ -28,10 +54,10 @@ export async function GET(request: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        client_id: GITHUB_CLIENT_ID,
-        client_secret: GITHUB_CLIENT_SECRET,
+        client_id: OAUTH_CLIENT_ID,
+        client_secret: OAUTH_CLIENT_SECRET,
         code,
-        redirect_uri: REDIRECT_URI,
+        redirect_uri: OAUTH_REDIRECT_URI,
       }),
     });
 
@@ -65,7 +91,6 @@ export async function GET(request: Request) {
     const hasStarred = starRes.status === 204;
 
     if (isFollowing && hasStarred) {
-      // Redirect to unlock page with access token in fragment (not query, so not sent to server logs)
       const unlockUrl = new URL("/?auth=success", request.url);
       unlockUrl.hash = `token=${accessToken}`;
       return NextResponse.redirect(unlockUrl);

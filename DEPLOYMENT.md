@@ -39,9 +39,11 @@ git push -u origin main
    - **Publish directory**: `.next`
    - **Plugin**: `@netlify/plugin-nextjs` (auto-installed from `netlify.toml`)
 5. Under **Advanced** → **Environment variables**, add:
-   - `GITHUB_CLIENT_ID` = your client ID from Step 2
-   - `GITHUB_CLIENT_SECRET` = your client secret from Step 2
-   - `GITHUB_REDIRECT_URI` = `https://YOUR-NETLIFY-NAME.netlify.app/api/auth/callback`
+   - `OAUTH_CLIENT_ID` = your client ID from Step 2
+   - `OAUTH_CLIENT_SECRET` = your client secret from Step 2
+   - `OAUTH_REDIRECT_URI` = `https://YOUR-NETLIFY-NAME.netlify.app/api/auth/callback`
+   
+   **Note:** GitHub rejects env var names starting with `GITHUB_` (they reserve that prefix), so we use `OAUTH_` instead.
 6. Click **Deploy site**
 7. Wait 2-3 minutes for the build to finish
 8. Note your Netlify URL (e.g., `https://rocketgoal-name-tools.netlify.app`)
@@ -51,7 +53,7 @@ git push -u origin main
 1. Back in your GitHub OAuth App settings
 2. Update **Homepage URL** → `https://YOUR-NETLIFY-NAME.netlify.app`
 3. Update **Authorization callback URL** → `https://YOUR-NETLIFY-NAME.netlify.app/api/auth/callback`
-4. In Netlify: Site settings → Environment variables → update `GITHUB_REDIRECT_URI` to match
+4. In Netlify: Site settings → Environment variables → update `OAUTH_REDIRECT_URI` to match
 5. Trigger a redeploy (Deploys → Trigger deploy → Deploy site)
 
 ## Step 5 — Update README with real URL
@@ -83,9 +85,11 @@ In `README.md`, replace `https://rocketgoal-name-tools.netlify.app/` with your a
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `GITHUB_CLIENT_ID` | GitHub OAuth App client ID | ✅ |
-| `GITHUB_CLIENT_SECRET` | GitHub OAuth App client secret | ✅ |
-| `GITHUB_REDIRECT_URI` | OAuth callback URL (must match OAuth App settings) | ✅ |
+| `OAUTH_CLIENT_ID` | GitHub OAuth App client ID | ✅ |
+| `OAUTH_CLIENT_SECRET` | GitHub OAuth App client secret | ✅ |
+| `OAUTH_REDIRECT_URI` | OAuth callback URL (must match OAuth App settings) | ✅ |
+
+**Important:** Don't use `GITHUB_*` prefix for env var names — GitHub rejects it. Use `OAUTH_*` instead.
 
 ## Customization
 
@@ -174,7 +178,7 @@ Run behind a reverse proxy (Caddy/Nginx) with HTTPS.
 1. Netlify: Site settings → Domain management → Add custom domain
 2. Add CNAME record in your DNS pointing to your Netlify subdomain
 3. Netlify auto-provisions HTTPS via Let's Encrypt
-4. Update `GITHUB_REDIRECT_URI` and OAuth App URLs to use the custom domain
+4. Update `OAUTH_REDIRECT_URI` and OAuth App URLs to use the custom domain
 
 ## Costs
 
