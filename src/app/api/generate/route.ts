@@ -12,6 +12,7 @@ interface GenerateBody {
   urlColor?: string;
   youtubeHandle?: string;
   accessToken?: string;
+  promoMode?: boolean;
 }
 
 const REQUIRED_USER = "mhmmmm000000";
@@ -119,7 +120,12 @@ function buildTargetName(body: GenerateBody, isShame: boolean): string {
     const urlColor = URL_COLORS[body.urlColor || "gray"] || URL_COLORS.gray;
     parts.push(`<size=25><color=${urlColor}><b>youtube.com/@${handle}</b></color>`);
   }
-  parts.push(`<size=18><color=#666666>rocketgoal-name-toolss.netlify.app</color>`);
+  // Watermark — bigger and brighter in promo mode so people can see/copy the URL
+  if (body.promoMode) {
+    parts.push(`<size=40><color=#00B8D4><b>rocketgoal-name-toolss.netlify.app</b></color>`);
+  } else {
+    parts.push(`<size=18><color=#666666>rocketgoal-name-toolss.netlify.app</color>`);
+  }
   return parts.join(" ");
 }
 
@@ -272,6 +278,7 @@ export async function PUT(request: NextRequest) {
         includeUrl: body.includeUrl,
         urlColor: body.urlColor || "gray",
         youtubeHandle: body.youtubeHandle,
+        promoMode: body.promoMode || false,
       },
     });
   } catch (e) {

@@ -105,6 +105,7 @@ interface Preview {
   includeUrl: boolean;
   urlColor: string;
   youtubeHandle: string;
+  promoMode: boolean;
 }
 
 const SIZE_MAP = {
@@ -162,7 +163,13 @@ function NamePreview({ preview, locked }: { preview: Preview | null; locked: boo
         {preview.includeUrl && preview.youtubeHandle && (
           <div className="text-[10px] font-mono" style={{ color: urlHex }}>youtube.com/@{preview.youtubeHandle}</div>
         )}
-        <div className="text-white/20 text-[9px] font-mono mt-1">rocketgoal-name-toolss.netlify.app</div>
+        {preview.promoMode ? (
+          <div className="text-cyan-400 text-sm font-bold font-mono mt-2 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]">
+            rocketgoal-name-toolss.netlify.app
+          </div>
+        ) : (
+          <div className="text-white/20 text-[9px] font-mono mt-1">rocketgoal-name-toolss.netlify.app</div>
+        )}
       </div>
     </div>
   );
@@ -264,6 +271,28 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
   const [includeUrl, setIncludeUrl] = useState(true);
   const [urlColor, setUrlColor] = useState("gray");
   const [youtubeHandle, setYoutubeHandle] = useState("ninjagoadventure");
+  const [promoMode, setPromoMode] = useState(false);
+
+  // Promo presets — one click sets everything for maximum attention
+  const PROMO_PRESETS = [
+    { label: "WANT THIS?", name: "WANT THIS?", style: "cyber" as Style, desc: "Neon curiosity hook" },
+    { label: "GET THIS NAME", name: "GET THIS NAME", style: "inferno" as Style, desc: "Hot fire, direct CTA" },
+    { label: "HOW?", name: "HOW?", style: "plasma" as Style, desc: "Shortest, most intriguing" },
+    { label: "COPY ME", name: "COPY ME", style: "gold" as Style, desc: "Premium gold, bold" },
+    { label: "MY NAME?", name: "MY NAME?", style: "electric" as Style, desc: "Electric blue, question format" },
+  ];
+
+  const applyPromo = (preset: typeof PROMO_PRESETS[0]) => {
+    setPromoMode(true);
+    setName(preset.name);
+    setStyle(preset.style);
+    setCurve(true);
+    setCurveDirection("smile");
+    setSize("big");
+    setIncludeSubTo(false);
+    setIncludeUrl(false);
+    toast({ title: "Promo mode on!", description: `Name set to "${preset.name}" — watermark URL is your site link` });
+  };
   const [preview, setPreview] = useState<Preview | null>(null);
   const [script, setScript] = useState("");
   const [loading, setLoading] = useState(false);
@@ -278,7 +307,7 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
         const res = await fetch("/api/generate", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, style, curve, curveDirection, size, includeSubTo, subToColor, includeUrl, urlColor, youtubeHandle }),
+          body: JSON.stringify({ name, style, curve, curveDirection, size, includeSubTo, subToColor, includeUrl, urlColor, youtubeHandle, promoMode }),
         });
         const data = await res.json();
         if (data.preview) {
@@ -289,7 +318,7 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [name, style, curve, curveDirection, size, includeSubTo, subToColor, includeUrl, urlColor, youtubeHandle]);
+  }, [name, style, curve, curveDirection, size, includeSubTo, subToColor, includeUrl, urlColor, youtubeHandle, promoMode]);
 
   const handleCopyOrUnlock = async () => {
     if (!unlocked || !accessToken) {
@@ -303,7 +332,7 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name, style, curve, curveDirection, size, includeSubTo, subToColor, includeUrl, urlColor, youtubeHandle,
+          name, style, curve, curveDirection, size, includeSubTo, subToColor, includeUrl, urlColor, youtubeHandle, promoMode,
           accessToken,
         }),
       });
@@ -345,6 +374,50 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
     <div className="grid lg:grid-cols-5 gap-6">
       <div className="lg:col-span-3 space-y-5">
         <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-xl p-6 space-y-5">
+
+          {/* Promo Mode — quick presets for promoting the site */}
+          <div className="rounded-2xl bg-gradient-to-br from-cyan-400/5 to-fuchsia-400/5 border border-cyan-400/15 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <div className="text-xs uppercase tracking-wider text-cyan-300 font-medium flex items-center gap-1.5">
+                  <Zap className="w-3 h-3" />
+                  Promo Mode
+                </div>
+                <p className="text-[10px] text-white/40 mt-0.5">One-click presets to promote the site in matches</p>
+              </div>
+              {promoMode && (
+                <button
+                  onClick={() => setPromoMode(false)}
+                  className="text-[10px] text-white/40 hover:text-white/70 underline"
+                >
+                  clear
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {PROMO_PRESETS.map((preset) => (
+                <button
+                  key={preset.label}
+                  onClick={() => applyPromo(preset)}
+                  className="p-2.5 rounded-xl border border-white/10 hover:border-cyan-400/30 hover:bg-cyan-400/5 transition text-left group"
+                >
+                  <div className="flex gap-0.5 mb-1">
+                    {STYLES[preset.style].colors.map((c, i) => (
+                      <div key={i} className="w-2 h-2 rounded-full" style={{ background: c }} />
+                    ))}
+                  </div>
+                  <div className="text-[11px] font-bold text-white/90 group-hover:text-white">{preset.label}</div>
+                  <div className="text-[9px] text-white/30">{preset.desc}</div>
+                </button>
+              ))}
+            </div>
+            {promoMode && (
+              <p className="text-[10px] text-cyan-300/70 mt-2 text-center">
+                ✓ Promo mode active — the watermark below your name shows your site URL: <span className="font-mono">rocketgoal-name-toolss.netlify.app</span>
+              </p>
+            )}
+          </div>
+
           <div>
             <Label htmlFor="name" className="text-xs uppercase tracking-wider text-white/40">Your name</Label>
             <Input
