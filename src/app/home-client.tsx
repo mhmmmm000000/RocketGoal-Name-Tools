@@ -99,12 +99,19 @@ interface Preview {
   colors: string[];
   curve: boolean;
   curveDirection: "smile" | "frown";
+  size: "small" | "medium" | "big";
   includeSubTo: boolean;
   subToColor: string;
   includeUrl: boolean;
   urlColor: string;
   youtubeHandle: string;
 }
+
+const SIZE_MAP = {
+  small: "text-2xl md:text-3xl",
+  medium: "text-4xl md:text-5xl",
+  big: "text-6xl md:text-7xl",
+};
 
 function NamePreview({ preview, locked }: { preview: Preview | null; locked: boolean }) {
   if (!preview) {
@@ -114,6 +121,15 @@ function NamePreview({ preview, locked }: { preview: Preview | null; locked: boo
       </div>
     );
   }
+
+  // Render each letter individually with its own solid color
+  // This matches how the actual game renders it (per-letter TextMeshPro colors)
+  // and avoids the "invisible text" bug from CSS gradient clipping
+  const letters = preview.name.split("");
+  const subToHex = SUB_TO_COLORS.find(c => c.key === preview.subToColor)?.hex || "#FF1744";
+  const urlHex = URL_COLORS.find(c => c.key === preview.urlColor)?.hex || "#9E9E9E";
+  const sizeClass = SIZE_MAP[preview.size] || SIZE_MAP.medium;
+
   return (
     <div className="relative aspect-video rounded-2xl border border-white/10 overflow-hidden bg-gradient-to-br from-white/[0.03] to-transparent">
       {locked && (
@@ -128,23 +144,23 @@ function NamePreview({ preview, locked }: { preview: Preview | null; locked: boo
       )}
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-6">
         {preview.includeSubTo && (
-          <div className="font-black text-xs tracking-[0.3em] uppercase" style={{ color: SUB_TO_COLORS.find(c => c.key === preview.subToColor)?.hex || "#FF1744" }}>SUB TO</div>
+          <div className="font-black text-xs tracking-[0.3em] uppercase" style={{ color: subToHex }}>SUB TO</div>
         )}
         <div
-          className="text-4xl md:text-5xl font-black tracking-wider"
+          className={`font-black tracking-wider ${sizeClass}`}
           style={{
-            background: `linear-gradient(90deg, ${preview.colors.join(", ")})`,
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-            filter: "drop-shadow(0 0 24px rgba(34,211,238,0.3))",
+            filter: "drop-shadow(0 0 24px rgba(34,211,238,0.2))",
             transform: preview.curve ? `perspective(400px) rotateX(${preview.curveDirection === "frown" ? -12 : 12}deg)` : "none",
           }}
         >
-          {preview.name}
+          {letters.map((char, i) => (
+            <span key={i} style={{ color: preview.colors[i % preview.colors.length] }}>
+              {char}
+            </span>
+          ))}
         </div>
         {preview.includeUrl && preview.youtubeHandle && (
-          <div className="text-[10px] font-mono" style={{ color: URL_COLORS.find(c => c.key === preview.urlColor)?.hex || "#9E9E9E" }}>youtube.com/@{preview.youtubeHandle}</div>
+          <div className="text-[10px] font-mono" style={{ color: urlHex }}>youtube.com/@{preview.youtubeHandle}</div>
         )}
         <div className="text-white/20 text-[9px] font-mono mt-1">github.com/{GITHUB_USER}</div>
       </div>
@@ -242,6 +258,7 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
   const [style, setStyle] = useState<Style>("ocean");
   const [curve, setCurve] = useState(true);
   const [curveDirection, setCurveDirection] = useState<"smile" | "frown">("smile");
+  const [size, setSize] = useState<"small" | "medium" | "big">("medium");
   const [includeSubTo, setIncludeSubTo] = useState(true);
   const [subToColor, setSubToColor] = useState("red");
   const [includeUrl, setIncludeUrl] = useState(true);
@@ -261,7 +278,7 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
         const res = await fetch("/api/generate", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, style, curve, curveDirection, includeSubTo, subToColor, includeUrl, urlColor, youtubeHandle }),
+          body: JSON.stringify({ name, style, curve, curveDirection, size, includeSubTo, subToColor, includeUrl, urlColor, youtubeHandle }),
         });
         const data = await res.json();
         if (data.preview) {
@@ -272,7 +289,7 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [name, style, curve, curveDirection, includeSubTo, subToColor, includeUrl, urlColor, youtubeHandle]);
+  }, [name, style, curve, curveDirection, size, includeSubTo, subToColor, includeUrl, urlColor, youtubeHandle]);
 
   const handleCopyOrUnlock = async () => {
     if (!unlocked || !accessToken) {
@@ -286,7 +303,7 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name, style, curve, curveDirection, includeSubTo, subToColor, includeUrl, urlColor, youtubeHandle,
+          name, style, curve, curveDirection, size, includeSubTo, subToColor, includeUrl, urlColor, youtubeHandle,
           accessToken,
         }),
       });
@@ -391,6 +408,31 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
                 </div>
               </div>
             )}
+
+            {/* Size selector */}
+            <div>
+              <Label className="text-xs uppercase tracking-wider text-white/40">Name size</Label>
+              <div className="flex gap-2 mt-1.5">
+                <button
+                  onClick={() => setSize("small")}
+                  className={`flex-1 p-2 rounded-lg border text-xs transition ${size === "small" ? "border-cyan-400/40 bg-cyan-400/5 text-white" : "border-white/10 text-white/50"}`}
+                >
+                  Small
+                </button>
+                <button
+                  onClick={() => setSize("medium")}
+                  className={`flex-1 p-2 rounded-lg border text-xs transition ${size === "medium" ? "border-cyan-400/40 bg-cyan-400/5 text-white" : "border-white/10 text-white/50"}`}
+                >
+                  Medium
+                </button>
+                <button
+                  onClick={() => setSize("big")}
+                  className={`flex-1 p-2 rounded-lg border text-xs transition ${size === "big" ? "border-cyan-400/40 bg-cyan-400/5 text-white" : "border-white/10 text-white/50"}`}
+                >
+                  Big
+                </button>
+              </div>
+            </div>
 
             <div className="flex items-center justify-between">
               <div>

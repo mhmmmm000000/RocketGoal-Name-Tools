@@ -5,6 +5,7 @@ interface GenerateBody {
   style: string;
   curve: boolean;
   curveDirection?: "smile" | "frown";
+  size?: "small" | "medium" | "big";
   includeSubTo: boolean;
   subToColor?: string;
   includeUrl: boolean;
@@ -62,6 +63,12 @@ const URL_COLORS: Record<string, string> = {
   blue: "#4A90E2",
 };
 
+const SIZE_VALUES: Record<string, number> = {
+  small: 60,
+  medium: 100,
+  big: 150,
+};
+
 function escapeName(name: string): string {
   return name.replace(/[<>]/g, "");
 }
@@ -95,10 +102,11 @@ function buildTargetName(body: GenerateBody, isShame: boolean): string {
   const cleanName = escapeName(body.name.toUpperCase());
   if (!cleanName) throw new Error("Name is required");
   const colors = STYLE_COLORS[body.style] || STYLE_COLORS.ocean;
+  const sizeVal = SIZE_VALUES[body.size || "medium"] || 100;
 
   const namePart = body.curve
-    ? `<size=100><b>${buildCurvedColoredName(cleanName, colors, body.curveDirection || "smile")}</b></size>`
-    : `<size=100><b>${buildFlatColoredName(cleanName, colors)}</b></size>`;
+    ? `<size=${sizeVal}><b>${buildCurvedColoredName(cleanName, colors, body.curveDirection || "smile")}</b></size>`
+    : `<size=${sizeVal}><b>${buildFlatColoredName(cleanName, colors)}</b></size>`;
 
   const parts: string[] = [];
   if (body.includeSubTo) {
@@ -258,6 +266,7 @@ export async function PUT(request: NextRequest) {
         html: nameHtml,
         curve: body.curve,
         curveDirection: body.curveDirection || "smile",
+        size: body.size || "medium",
         includeSubTo: body.includeSubTo,
         subToColor: body.subToColor || "red",
         includeUrl: body.includeUrl,
