@@ -132,15 +132,6 @@ function GatePopup({ open, onOpenChange }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
-  const [step, setStep] = useState<"intro" | "follow" | "star" | "verify">("intro");
-
-  useEffect(() => {
-    if (open) {
-      const t = setTimeout(() => setStep("intro"), 0);
-      return () => clearTimeout(t);
-    }
-  }, [open]);
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-white/[0.06] backdrop-blur-2xl border-white/10 max-w-md rounded-3xl">
@@ -149,106 +140,43 @@ function GatePopup({ open, onOpenChange }: {
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400/20 to-fuchsia-400/20 border border-white/10 flex items-center justify-center">
               <Lock className="w-4 h-4 text-cyan-300" />
             </div>
-            {step === "intro" && "Unlock the generator"}
-            {step === "follow" && "Step 1 of 2 — Follow"}
-            {step === "star" && "Step 2 of 2 — Star"}
-            {step === "verify" && "Verifying..."}
+            Unlock the generator
           </DialogTitle>
           <DialogDescription className="text-white/50">
-            {step === "intro" && "Two quick actions on GitHub unlock everything."}
-            {step === "follow" && `Follow @${GITHUB_USER} on GitHub.`}
-            {step === "star" && `Star the ${GITHUB_REPO} repo.`}
-            {step === "verify" && "Checking your GitHub..."}
+            Connect your GitHub account to get started. After connecting, you&apos;ll follow + star to unlock.
           </DialogDescription>
         </DialogHeader>
 
-        {step === "intro" && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.03] border border-white/5">
-              <UserPlus className="w-4 h-4 text-cyan-300 flex-shrink-0" />
-              <div>
-                <div className="text-white/90 text-sm font-medium">Follow @{GITHUB_USER}</div>
-                <div className="text-xs text-white/40">One click on GitHub</div>
-              </div>
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.03] border border-white/5">
+            <UserPlus className="w-4 h-4 text-cyan-300 flex-shrink-0" />
+            <div>
+              <div className="text-white/90 text-sm font-medium">Follow @{GITHUB_USER}</div>
+              <div className="text-xs text-white/40">Required to unlock</div>
             </div>
-            <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.03] border border-white/5">
-              <Star className="w-4 h-4 text-yellow-300 flex-shrink-0" />
-              <div>
-                <div className="text-white/90 text-sm font-medium">Star {GITHUB_REPO}</div>
-                <div className="text-xs text-white/40">One click on GitHub</div>
-              </div>
+          </div>
+          <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.03] border border-white/5">
+            <Star className="w-4 h-4 text-yellow-300 flex-shrink-0" />
+            <div>
+              <div className="text-white/90 text-sm font-medium">Star {GITHUB_REPO}</div>
+              <div className="text-xs text-white/40">Required to unlock</div>
             </div>
-            <Button
-              className="w-full bg-gradient-to-r from-cyan-400 to-fuchsia-400 hover:opacity-90 text-white border-0 rounded-xl"
-              onClick={() => setStep("follow")}
-            >
-              Start <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
-            <p className="text-[10px] text-white/30 text-center pt-1">
-              <Shield className="w-2.5 h-2.5 inline mr-1" />
-              We only request read:user + public_repo. No token stored server-side.
-            </p>
           </div>
-        )}
 
-        {step === "follow" && (
-          <div className="space-y-3">
-            <a
-              href={`https://github.com/${GITHUB_USER}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between p-4 rounded-2xl border border-white/10 hover:border-cyan-400/30 hover:bg-cyan-400/5 transition"
-            >
-              <div className="flex items-center gap-3">
-                <Github className="w-5 h-5" />
-                <div>
-                  <div className="font-medium text-white/90 text-sm">Open @{GITHUB_USER}</div>
-                  <div className="text-xs text-white/40">Click Follow on GitHub</div>
-                </div>
-              </div>
-              <ExternalLink className="w-4 h-4 text-white/30" />
-            </a>
-            <Button className="w-full rounded-xl" variant="outline" onClick={() => setStep("star")}>
-              I followed — next <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
-          </div>
-        )}
+          <Button
+            className="w-full bg-gradient-to-r from-cyan-400 to-fuchsia-400 hover:opacity-90 text-white border-0 rounded-xl"
+            onClick={() => { window.location.href = "/api/auth/github"; }}
+          >
+            <Github className="w-4 h-4 mr-2" />
+            Connect with GitHub
+          </Button>
 
-        {step === "star" && (
-          <div className="space-y-3">
-            <a
-              href={`https://github.com/${GITHUB_USER}/${GITHUB_REPO}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between p-4 rounded-2xl border border-white/10 hover:border-yellow-400/30 hover:bg-yellow-400/5 transition"
-            >
-              <div className="flex items-center gap-3">
-                <Star className="w-5 h-5 text-yellow-300" />
-                <div>
-                  <div className="font-medium text-white/90 text-sm">Open {GITHUB_REPO}</div>
-                  <div className="text-xs text-white/40">Click Star (top-right)</div>
-                </div>
-              </div>
-              <ExternalLink className="w-4 h-4 text-white/30" />
-            </a>
-            <Button
-              className="w-full bg-gradient-to-r from-cyan-400 to-fuchsia-400 hover:opacity-90 text-white border-0 rounded-xl"
-              onClick={() => setStep("verify")}
-            >
-              Verify with GitHub <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
-          </div>
-        )}
-
-        {step === "verify" && (
-          <div className="space-y-3 text-center py-4">
-            <RefreshCw className="w-8 h-8 text-cyan-300 mx-auto animate-spin" />
-            <p className="text-sm text-white/50">Redirecting to GitHub...</p>
-            <Button className="w-full rounded-xl" variant="outline" onClick={() => { window.location.href = "/api/auth/github"; }}>
-              Click if not redirected
-            </Button>
-          </div>
-        )}
+          <p className="text-[10px] text-white/30 text-center pt-1">
+            <Shield className="w-2.5 h-2.5 inline mr-1" />
+            We only request read:user + public_repo. No token stored server-side.
+            After connecting, you&apos;ll see the follow + star steps.
+          </p>
+        </div>
       </DialogContent>
     </Dialog>
   );
@@ -540,13 +468,15 @@ function StepsSection() {
 export function HomeClient() {
   const [unlocked, setUnlocked] = useState(false);
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [pendingToken, setPendingToken] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
+  const [verifyError, setVerifyError] = useState<string>("");
   const [gateOpen, setGateOpen] = useState(false);
   const [authError, setAuthError] = useState<string>("");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    // Read URL params safely (no useSearchParams to avoid SSG issues)
     const params = new URLSearchParams(window.location.search);
     const auth = params.get("auth");
 
@@ -557,16 +487,23 @@ export function HomeClient() {
         setUnlocked(true);
         toast({ title: "Unlocked", description: "Generator is ready." });
       }
+    } else if (auth === "pending") {
+      // OAuth succeeded, but user hasn't followed/starred yet.
+      // Show the verification panel so they can do it now.
+      const token = getToken();
+      if (token) {
+        setPendingToken(token);
+        toast({ title: "One more step", description: "Follow + star on GitHub, then click verify." });
+      }
     } else if (auth === "incomplete") {
-      const reason = params.get("reason") || "both";
-      const msgs: Record<string, string> = {
-        follow: "You need to follow @mhmmmm000000 first",
-        star: "You need to star the repo first",
-        both: "You need to follow AND star to unlock",
-      };
-      setAuthError(msgs[reason] || "Verification incomplete");
-      toast({ title: "Not yet", description: msgs[reason], variant: "destructive" });
-    } else if (auth === "error" || auth === "token_error") {
+      // Legacy: shouldn't happen anymore, but handle gracefully
+      const token = getToken();
+      if (token) {
+        setPendingToken(token);
+      } else {
+        setAuthError("Verification incomplete — try again");
+      }
+    } else if (auth === "error" || auth === "token_error" || auth === "not_configured") {
       setAuthError("Authentication failed. Try again.");
       toast({ title: "Auth failed", description: "Try again", variant: "destructive" });
     } else {
@@ -578,6 +515,41 @@ export function HomeClient() {
       }
     }
   }, []);
+
+  const handleVerify = async () => {
+    if (!pendingToken) return;
+    setVerifying(true);
+    setVerifyError("");
+    try {
+      const res = await fetch("/api/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accessToken: pendingToken }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setAccessToken(pendingToken);
+        setUnlocked(true);
+        setPendingToken(null);
+        // Clean URL
+        window.history.replaceState(null, "", window.location.pathname);
+        toast({ title: "Unlocked!", description: "Thanks for the follow + star." });
+      } else {
+        setVerifyError(data.message || "Verification failed");
+        toast({ title: "Not yet", description: data.message, variant: "destructive" });
+      }
+    } catch {
+      setVerifyError("Network error. Try again.");
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleCancelPending = () => {
+    setPendingToken(null);
+    setVerifyError("");
+    window.history.replaceState(null, "", window.location.pathname);
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -642,6 +614,97 @@ export function HomeClient() {
             )}
           </div>
         </section>
+
+        {/* Pending Verification Panel — shows after OAuth but before follow/star */}
+        {pendingToken && !unlocked && (
+          <section className="max-w-2xl mx-auto px-4 pb-12">
+            <div className="rounded-3xl border border-cyan-400/20 bg-cyan-400/[0.03] backdrop-blur-xl p-6 md:p-8">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-2xl bg-cyan-400/10 border border-cyan-400/20 flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-cyan-300" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-white">Almost there!</h2>
+                  <p className="text-xs text-white/50">Complete these 2 steps on GitHub, then verify</p>
+                </div>
+              </div>
+
+              <div className="space-y-3 mb-5">
+                {/* Step 1: Follow */}
+                <a
+                  href={`https://github.com/${GITHUB_USER}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-4 rounded-2xl border border-white/10 hover:border-cyan-400/30 hover:bg-cyan-400/5 transition group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-sm font-mono text-cyan-300">1</div>
+                    <div>
+                      <div className="font-medium text-white/90 text-sm">Follow @{GITHUB_USER}</div>
+                      <div className="text-xs text-white/40">Opens GitHub profile in new tab</div>
+                    </div>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-white/30 group-hover:text-cyan-300" />
+                </a>
+
+                {/* Step 2: Star */}
+                <a
+                  href={`https://github.com/${GITHUB_USER}/${GITHUB_REPO}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-4 rounded-2xl border border-white/10 hover:border-yellow-400/30 hover:bg-yellow-400/5 transition group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-sm font-mono text-yellow-300">2</div>
+                    <div>
+                      <div className="font-medium text-white/90 text-sm">Star the repo</div>
+                      <div className="text-xs text-white/40">Click the Star button (top-right of repo page)</div>
+                    </div>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-white/30 group-hover:text-yellow-300" />
+                </a>
+              </div>
+
+              {verifyError && (
+                <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-300">
+                  {verifyError}
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1 bg-gradient-to-r from-cyan-400 to-fuchsia-400 hover:opacity-90 text-white border-0 rounded-xl"
+                  onClick={handleVerify}
+                  disabled={verifying}
+                >
+                  {verifying ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Checking...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4 mr-2" />
+                      I did both — verify now
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="border-white/10 text-white/50 hover:bg-white/5 rounded-xl"
+                  onClick={handleCancelPending}
+                >
+                  Cancel
+                </Button>
+              </div>
+
+              <p className="text-[10px] text-white/30 mt-3 text-center">
+                Tip: After clicking the links above, come back to this tab and click &quot;verify now&quot;.
+                Sometimes GitHub takes a few seconds to register the follow/star.
+              </p>
+            </div>
+          </section>
+        )}
 
         {/* Generator */}
         <section className="max-w-6xl mx-auto px-4 pb-12">

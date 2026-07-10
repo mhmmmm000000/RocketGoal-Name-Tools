@@ -19,8 +19,6 @@ const OAUTH_REDIRECT_URI =
   process.env.GITHUB_REDIRECT_URI ||
   process.env.GH_REDIRECT_URI ||
   "";
-const REQUIRED_USER = "mhmmmm000000";
-const REQUIRED_REPO = "rocketgoal-name-tools";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -35,7 +33,6 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL("/?auth=no_code", request.url));
   }
 
-  // Debug: if secrets aren't set, redirect with helpful error
   if (!OAUTH_CLIENT_ID || !OAUTH_CLIENT_SECRET) {
     console.error("Missing OAuth env vars", {
       hasClientId: !!OAUTH_CLIENT_ID,
@@ -70,36 +67,12 @@ export async function GET(request: Request) {
 
     const accessToken = tokenData.access_token;
 
-    // Check follow status
-    const followRes = await fetch(`https://api.github.com/user/following/${REQUIRED_USER}`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        Accept: "application/vnd.github+json",
-      },
-    });
-
-    const isFollowing = followRes.status === 204;
-
-    // Check star status
-    const starRes = await fetch(`https://api.github.com/user/starred/${REQUIRED_USER}/${REQUIRED_REPO}`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        Accept: "application/vnd.github+json",
-      },
-    });
-
-    const hasStarred = starRes.status === 204;
-
-    if (isFollowing && hasStarred) {
-      const unlockUrl = new URL("/?auth=success", request.url);
-      unlockUrl.hash = `token=${accessToken}`;
-      return NextResponse.redirect(unlockUrl);
-    } else {
-      const reason = !isFollowing && !hasStarred
-        ? "follow_and_star"
-        : !isFollowing ? "follow" : "star";
-      return NextResponse.redirect(new URL(`/?auth=incomplete&reason=${reason}`, request.url));
-    }
+    // DON'T check follow/star yet — user hasn't had a chance to do it.
+    // Just store the token and redirect to "pending" state where they
+    // can actually follow + star, then click "I did it" to verify.
+    const pendingUrl = new URL("/?auth=pending", request.url);
+    pendingUrl.hash = `token=${accessToken}`;
+    return NextResponse.redirect(pendingUrl);
   } catch (e) {
     console.error("OAuth callback error:", e);
     return NextResponse.redirect(new URL("/?auth=error", request.url));

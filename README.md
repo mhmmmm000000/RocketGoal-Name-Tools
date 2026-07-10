@@ -10,11 +10,27 @@ Style your in-game name with curves, gradients, and promo text — works in live
 
 [![Live Site](https://img.shields.io/badge/live-site-cyan?style=flat-square)](https://rocketgoal-name-tools.netlify.app/)
 [![GitHub stars](https://img.shields.io/github/stars/mhmmmm000000/rocketgoal-name-tools?style=flat-square&color=yellow)](https://github.com/mhmmmm000000/rocketgoal-name-tools/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/mhmmmm000000/rocketgoal-name-tools?style=flat-square&color=blue)](https://github.com/mhmmmm000000/rocketgoal-name-tools/forks)
+[![GitHub issues](https://img.shields.io/github/issues/mhmmmm000000/rocketgoal-name-tools?style=flat-square&color=red)](https://github.com/mhmmmm000000/rocketgoal-name-tools/issues)
+[![Profile views](https://komarev.com/ghpvc/?username=mhmmmm000000&color=cyan&style=flat-square&label=profile+views)](https://github.com/mhmmmm000000)
+[![Repo views](https://img.shields.io/endpoint?url=https://hits.dwyl.com/mhmmmm000000/rocketgoal-name-tools.json&color=cyan&style=flat-square&label=repo+views)](https://github.com/mhmmmm000000/rocketgoal-name-tools)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 [![Made by](https://img.shields.io/badge/made%20by-%40mhmmmm000000-fuchsia?style=flat-square)](https://github.com/mhmmmm000000)
 [![Deployed on Netlify](https://img.shields.io/badge/deployed%20on-netlify-00C7B7?style=flat-square&logo=netlify&logoColor=white)](https://www.netlify.com/)
 
 </div>
+
+---
+
+## Star History
+
+<a href="https://star-history.com/#mhmmmm000000/rocketgoal-name-tools&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=mhmmmm000000/rocketgoal-name-tools&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=mhmmmm000000/rocketgoal-name-tools&type=Date" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=mhmmmm000000/rocketgoal-name-tools&type=Date" width="100%" />
+  </picture>
+</a>
 
 ---
 
