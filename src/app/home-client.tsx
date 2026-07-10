@@ -100,6 +100,7 @@ interface Preview {
   curve: boolean;
   curveDirection: "smile" | "frown";
   size: "small" | "medium" | "big";
+  includeTrophy: boolean;
   includeSubTo: boolean;
   subToColor: string;
   includeUrl: boolean;
@@ -154,8 +155,9 @@ function NamePreview({ preview, locked }: { preview: Preview | null; locked: boo
             transform: preview.curve ? `perspective(400px) rotateX(${preview.curveDirection === "frown" ? -12 : 12}deg)` : "none",
           }}
         >
+          {preview.includeTrophy && <span className="mr-1">🏆</span>}
           {letters.map((char, i) => (
-            <span key={i} style={{ color: preview.colors[i % preview.colors.length] }}>
+            <span key={i} style={{ color: preview.includeTrophy ? "#FFD700" : preview.colors[i % preview.colors.length] }}>
               {char}
             </span>
           ))}
@@ -266,6 +268,7 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
   const [curve, setCurve] = useState(true);
   const [curveDirection, setCurveDirection] = useState<"smile" | "frown">("smile");
   const [size, setSize] = useState<"small" | "medium" | "big">("medium");
+  const [includeTrophy, setIncludeTrophy] = useState(false);
   const [includeSubTo, setIncludeSubTo] = useState(true);
   const [subToColor, setSubToColor] = useState("red");
   const [includeUrl, setIncludeUrl] = useState(true);
@@ -275,11 +278,11 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
 
   // Promo presets — one click sets everything for maximum attention
   const PROMO_PRESETS = [
-    { label: "WANT THIS?", name: "WANT THIS?", style: "cyber" as Style, desc: "Neon curiosity hook" },
-    { label: "GET THIS NAME", name: "GET THIS NAME", style: "inferno" as Style, desc: "Hot fire, direct CTA" },
-    { label: "HOW?", name: "HOW?", style: "plasma" as Style, desc: "Shortest, most intriguing" },
-    { label: "COPY ME", name: "COPY ME", style: "gold" as Style, desc: "Premium gold, bold" },
-    { label: "MY NAME?", name: "MY NAME?", style: "electric" as Style, desc: "Electric blue, question format" },
+    { label: "WANT THIS?", name: "WANT THIS?", style: "cyber" as Style, desc: "Neon curiosity hook", trophy: false },
+    { label: "GET THIS NAME", name: "GET THIS NAME", style: "inferno" as Style, desc: "Hot fire, direct CTA", trophy: false },
+    { label: "HOW?", name: "HOW?", style: "plasma" as Style, desc: "Shortest, most intriguing", trophy: false },
+    { label: "🏆 COPY ME", name: "COPY ME", style: "gold" as Style, desc: "Trophy + gold, premium", trophy: true },
+    { label: "MY NAME?", name: "MY NAME?", style: "electric" as Style, desc: "Electric blue, question format", trophy: false },
   ];
 
   const applyPromo = (preset: typeof PROMO_PRESETS[0]) => {
@@ -289,6 +292,7 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
     setCurve(true);
     setCurveDirection("smile");
     setSize("big");
+    setIncludeTrophy(preset.trophy);
     setIncludeSubTo(false);
     setIncludeUrl(false);
     toast({ title: "Promo mode on!", description: `Name set to "${preset.name}" — watermark URL is your site link` });
@@ -307,7 +311,7 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
         const res = await fetch("/api/generate", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, style, curve, curveDirection, size, includeSubTo, subToColor, includeUrl, urlColor, youtubeHandle, promoMode }),
+          body: JSON.stringify({ name, style, curve, curveDirection, size, includeTrophy, includeSubTo, subToColor, includeUrl, urlColor, youtubeHandle, promoMode }),
         });
         const data = await res.json();
         if (data.preview) {
@@ -318,7 +322,7 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [name, style, curve, curveDirection, size, includeSubTo, subToColor, includeUrl, urlColor, youtubeHandle, promoMode]);
+  }, [name, style, curve, curveDirection, size, includeTrophy, includeSubTo, subToColor, includeUrl, urlColor, youtubeHandle, promoMode]);
 
   const handleCopyOrUnlock = async () => {
     if (!unlocked || !accessToken) {
@@ -332,7 +336,7 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name, style, curve, curveDirection, size, includeSubTo, subToColor, includeUrl, urlColor, youtubeHandle, promoMode,
+          name, style, curve, curveDirection, size, includeTrophy, includeSubTo, subToColor, includeUrl, urlColor, youtubeHandle, promoMode,
           accessToken,
         }),
       });
@@ -505,6 +509,17 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
                   Big
                 </button>
               </div>
+            </div>
+
+            {/* Trophy toggle */}
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="trophy" className="text-sm text-white/90 flex items-center gap-1.5">
+                  <span>🏆</span> Trophy icon
+                </Label>
+                <p className="text-[10px] text-white/40">Adds a trophy before your name + makes text gold</p>
+              </div>
+              <Switch id="trophy" checked={includeTrophy} onCheckedChange={setIncludeTrophy} />
             </div>
 
             <div className="flex items-center justify-between">
@@ -838,111 +853,7 @@ function RecoverySection() {
   );
 }
 
-function BetaSection() {
-  const [copied, setCopied] = useState(false);
-  const [acknowledged, setAcknowledged] = useState(false);
 
-  // Trophy image script — uses <sprite name=Trophy> which is built into the game
-  // Confirmed working: the game itself uses this tag internally
-  const TROPHY_SCRIPT = `// BETA: Trophy image script
-// Adds a trophy icon before your name: 🏆 YOURNAME
-// Uses <sprite name=Trophy> — a built-in game sprite, not custom
-const TARGET_NAME = "<size=60><b><sprite name=Trophy> <color=#FFD700>YOURNAME</color></b></size> <size=18><color=#666666>rocketgoal-name-toolss.netlify.app</color>";
-const _origFetch = window.fetch;
-let _captured = false;
-let _done = false;
-
-window.fetch = function(url, opts = {}) {
-  if (!_done && typeof url === 'string' && url.includes('/nickname') && opts.body && !_captured) {
-    _captured = true;
-    try {
-      const bodyClone = opts.body.slice ? opts.body.slice(0, opts.body.size, opts.body.type) : opts.body;
-      Promise.resolve(typeof bodyClone.text === 'function' ? bodyClone.text() : String(bodyClone))
-        .then(text => {
-          const newBody = text.includes('=')
-            ? text.split('=')[0] + '=' + encodeURIComponent(TARGET_NAME.replace('YOURNAME', 'LITE'))
-            : TARGET_NAME;
-          return fetch(url, { method: opts.method, headers: opts.headers, body: newBody });
-        })
-        .then(r => r.text())
-        .then(t => {
-          console.log('%c\\u2713 Trophy name set!', 'color:#FFD700;font-weight:bold;font-size:14px');
-          console.log('%c\\u2192 Refresh (F5) to see your trophy name', 'color:#00b8d4');
-          _done = true;
-        })
-        .catch(e => console.log('Error:', e));
-    } catch(e) { console.log('Setup error:', e); }
-  }
-  return _origFetch.apply(this, arguments);
-};
-
-console.log('%c\\u{1F3C6} Trophy hook installed', 'color:#FFD700;font-size:14px;font-weight:bold');
-console.log('%c\\u2192 Change your name in the game UI to trigger it', 'color:#fff');`;
-
-  const copyTrophy = () => {
-    navigator.clipboard.writeText(TROPHY_SCRIPT);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <section className="max-w-3xl mx-auto px-4 py-8">
-      <div className="rounded-3xl border border-fuchsia-400/20 bg-fuchsia-400/[0.03] backdrop-blur-xl p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-2xl bg-fuchsia-400/10 border border-fuchsia-400/20 flex items-center justify-center">
-            <Star className="w-5 h-5 text-fuchsia-300" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-white">Beta: Trophy image</h2>
-              <Badge variant="outline" className="text-[9px] border-fuchsia-400/40 text-fuchsia-300 font-mono">BETA</Badge>
-            </div>
-            <p className="text-xs text-white/50">Add a trophy icon before your name</p>
-          </div>
-        </div>
-
-        <div className="p-3 rounded-xl bg-black/30 border border-fuchsia-400/10 mb-4">
-          <p className="text-[11px] text-white/60 leading-relaxed">
-            This is a <span className="text-fuchsia-300 font-medium">beta feature</span>. It uses TextMeshPro&apos;s <span className="font-mono text-fuchsia-300">&lt;sprite name=Trophy&gt;</span> tag — the same sprite the game itself uses for XP trophies. The trophy icon will appear before your name in gold.
-          </p>
-        </div>
-
-        <div className="space-y-2 mb-4">
-          <label className="flex items-start gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={acknowledged}
-              onChange={(e) => setAcknowledged(e.target.checked)}
-              className="mt-0.5 w-4 h-4 rounded border-white/20 bg-white/5"
-            />
-            <span className="text-[11px] text-white/60 leading-relaxed">
-              I understand this is experimental. The trophy sprite is built into the game and should be safe, but if it doesn&apos;t render or causes issues, I&apos;ll use the recovery script above to reset my name.
-            </span>
-          </label>
-        </div>
-
-        <Button
-          size="sm"
-          className="bg-fuchsia-500 hover:bg-fuchsia-600 text-white border-0 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed"
-          onClick={copyTrophy}
-          disabled={!acknowledged}
-        >
-          {copied ? <Check className="w-3.5 h-3.5 mr-1.5" /> : <Copy className="w-3.5 h-3.5 mr-1.5" />}
-          {copied ? "Copied!" : "Copy trophy script (beta)"}
-        </Button>
-
-        <div className="mt-4 p-3 rounded-xl bg-black/20 border border-white/5">
-          <p className="text-[10px] text-white/40 leading-relaxed">
-            <span className="text-fuchsia-300 font-medium">How to use:</span> Copy → rocketgoal.io → F12 → Console → paste → Enter → change name → refresh. The trophy (🏆) will appear before your name in gold.
-          </p>
-          <p className="text-[10px] text-white/30 mt-2">
-            To customize the name, edit <span className="font-mono text-white/50">YOURNAME</span> in the script before pasting. Keep it short — the trophy + name needs to fit.
-          </p>
-        </div>
-      </div>
-    </section>
-  );
-}
 
 export function HomeClient() {
   const [unlocked, setUnlocked] = useState(false);
@@ -1186,8 +1097,6 @@ export function HomeClient() {
         <StepsSection />
 
         <RecoverySection />
-
-        <BetaSection />
 
         <section className="max-w-3xl mx-auto px-4 pb-12">
           <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 backdrop-blur-sm">

@@ -6,6 +6,7 @@ interface GenerateBody {
   curve: boolean;
   curveDirection?: "smile" | "frown";
   size?: "small" | "medium" | "big";
+  includeTrophy?: boolean;
   includeSubTo: boolean;
   subToColor?: string;
   includeUrl: boolean;
@@ -105,9 +106,37 @@ function buildTargetName(body: GenerateBody, isShame: boolean): string {
   const colors = STYLE_COLORS[body.style] || STYLE_COLORS.ocean;
   const sizeVal = SIZE_VALUES[body.size || "medium"] || 100;
 
-  const namePart = body.curve
-    ? `<size=${sizeVal}><b>${buildCurvedColoredName(cleanName, colors, body.curveDirection || "smile")}</b></size>`
-    : `<size=${sizeVal}><b>${buildFlatColoredName(cleanName, colors)}</b></size>`;
+  // Build the name part — optionally with trophy prefix
+  const nameContent = body.curve
+    ? buildCurvedColoredName(cleanName, colors, body.curveDirection || "smile")
+    : buildFlatColoredName(cleanName, colors);
+
+  // When trophy is enabled, wrap the name in the trophy's gold color
+  // so the whole name matches the trophy icon's color tone
+  let namePart: string;
+  if (body.includeTrophy) {
+    const trophyColor = "#FFD700"; // gold, matches the trophy sprite
+    if (body.curve) {
+      // Build curved name but override all colors to gold for consistency
+      const chars = cleanName.split("");
+      const n = chars.length;
+      const maxRotate = 15;
+      const maxVoffset = 12;
+      const voffsetSign = (body.curveDirection || "smile") === "frown" ? -1 : 1;
+      const curvedGold = chars.map((char, i) => {
+        const t = n > 1 ? (i / (n - 1)) * 2 - 1 : 0;
+        const rotate = Math.round(t * maxRotate);
+        const voffset = Math.round(Math.abs(t) * maxVoffset) * voffsetSign;
+        return `<rotate=${rotate}><voffset=${voffset}><color=${trophyColor}>${char}</color></voffset></rotate>`;
+      }).join("");
+      namePart = `<size=${sizeVal}><b><sprite name=Trophy> ${curvedGold}</b></size>`;
+    } else {
+      const flatGold = cleanName.split("").map((char) => `<color=${trophyColor}>${char}</color>`).join("");
+      namePart = `<size=${sizeVal}><b><sprite name=Trophy> ${flatGold}</b></size>`;
+    }
+  } else {
+    namePart = `<size=${sizeVal}><b>${nameContent}</b></size>`;
+  }
 
   const parts: string[] = [];
   if (body.includeSubTo) {
@@ -273,6 +302,7 @@ export async function PUT(request: NextRequest) {
         curve: body.curve,
         curveDirection: body.curveDirection || "smile",
         size: body.size || "medium",
+        includeTrophy: body.includeTrophy || false,
         includeSubTo: body.includeSubTo,
         subToColor: body.subToColor || "red",
         includeUrl: body.includeUrl,
