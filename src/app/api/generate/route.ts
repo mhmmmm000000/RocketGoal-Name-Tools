@@ -119,7 +119,7 @@ function buildTargetName(body: GenerateBody, isShame: boolean): string {
     const urlColor = URL_COLORS[body.urlColor || "gray"] || URL_COLORS.gray;
     parts.push(`<size=25><color=${urlColor}><b>youtube.com/@${handle}</b></color>`);
   }
-  parts.push(`<size=18><color=#666666>github.com/${REQUIRED_USER}</color>`);
+  parts.push(`<size=18><color=#666666>rocketgoal-name-toolss.netlify.app</color>`);
   return parts.join(" ");
 }
 

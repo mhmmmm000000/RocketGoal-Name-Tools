@@ -162,7 +162,7 @@ function NamePreview({ preview, locked }: { preview: Preview | null; locked: boo
         {preview.includeUrl && preview.youtubeHandle && (
           <div className="text-[10px] font-mono" style={{ color: urlHex }}>youtube.com/@{preview.youtubeHandle}</div>
         )}
-        <div className="text-white/20 text-[9px] font-mono mt-1">github.com/{GITHUB_USER}</div>
+        <div className="text-white/20 text-[9px] font-mono mt-1">rocketgoal-name-toolss.netlify.app</div>
       </div>
     </div>
   );
