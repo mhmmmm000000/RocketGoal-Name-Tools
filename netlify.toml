@@ -5,6 +5,10 @@
 [build.environment]
   NODE_VERSION = "20"
   NPM_FLAGS = "--legacy-peer-deps"
+  # Tell Netlify's secrets scanner to skip these — they're public OAuth config,
+  # not actual secrets. Without this, the build fails because the values
+  # appear in Next.js build output (prerender-manifest.json etc.)
+  SECRETS_SCAN_OMIT_KEYS = "CLIENT_ID,REDIRECT_URI,CLIENT_SECRET,OAUTH_CLIENT_ID,OAUTH_CLIENT_SECRET,OAUTH_REDIRECT_URI"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
