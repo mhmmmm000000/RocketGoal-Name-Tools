@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 const REQUIRED_USER = "mhmmmm000000";
-const REQUIRED_REPO = "rocketgoal-name-tools";
+const REQUIRED_REPO = "RocketGoal-Name-Tools";
 
 export async function POST(request: NextRequest) {
   try {

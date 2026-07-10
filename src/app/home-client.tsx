@@ -30,10 +30,11 @@ import {
   Star,
   UserPlus,
   Shield,
+  Gamepad2,
 } from "lucide-react";
 
 const GITHUB_USER = "mhmmmm000000";
-const GITHUB_REPO = "rocketgoal-name-tools";
+const GITHUB_REPO = "RocketGoal-Name-Tools";
 
 type Style = "ocean" | "sunset" | "cyber" | "ice" | "royal" | "inferno" | "matrix" | "candy" | "void" | "gold" | "mint" | "rose" | "electric" | "plasma" | "toxic" | "blood" | "sky" | "bronze" | "arctic" | "acid";
 
@@ -60,6 +61,27 @@ const STYLES: Record<Style, { name: string; colors: string[]; desc: string }> = 
   acid:     { name: "Acid",     colors: ["#CCFF00", "#A8FF00", "#80FF00", "#54FF00"], desc: "Acid yellow" },
 };
 
+const SUB_TO_COLORS = [
+  { key: "red",     hex: "#FF1744", label: "Red" },
+  { key: "orange",  hex: "#FF6B00", label: "Orange" },
+  { key: "yellow",  hex: "#FFD700", label: "Yellow" },
+  { key: "green",   hex: "#00FF00", label: "Green" },
+  { key: "cyan",    hex: "#00FFFF", label: "Cyan" },
+  { key: "blue",    hex: "#2196F3", label: "Blue" },
+  { key: "purple",  hex: "#9D00FF", label: "Purple" },
+  { key: "pink",    hex: "#FF0080", label: "Pink" },
+  { key: "white",   hex: "#FFFFFF", label: "White" },
+];
+
+const URL_COLORS = [
+  { key: "gray",    hex: "#9E9E9E", label: "Gray" },
+  { key: "white",   hex: "#FFFFFF", label: "White" },
+  { key: "cyan",    hex: "#00B8D4", label: "Cyan" },
+  { key: "yellow",  hex: "#FFD700", label: "Yellow" },
+  { key: "green",   hex: "#4CAF50", label: "Green" },
+  { key: "blue",    hex: "#4A90E2", label: "Blue" },
+];
+
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
   const hash = window.location.hash;
@@ -76,8 +98,11 @@ interface Preview {
   name: string;
   colors: string[];
   curve: boolean;
+  curveDirection: "smile" | "frown";
   includeSubTo: boolean;
+  subToColor: string;
   includeUrl: boolean;
+  urlColor: string;
   youtubeHandle: string;
 }
 
@@ -89,7 +114,6 @@ function NamePreview({ preview, locked }: { preview: Preview | null; locked: boo
       </div>
     );
   }
-
   return (
     <div className="relative aspect-video rounded-2xl border border-white/10 overflow-hidden bg-gradient-to-br from-white/[0.03] to-transparent">
       {locked && (
@@ -104,7 +128,7 @@ function NamePreview({ preview, locked }: { preview: Preview | null; locked: boo
       )}
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-6">
         {preview.includeSubTo && (
-          <div className="text-red-400 font-black text-xs tracking-[0.3em] uppercase">SUB TO</div>
+          <div className="font-black text-xs tracking-[0.3em] uppercase" style={{ color: SUB_TO_COLORS.find(c => c.key === preview.subToColor)?.hex || "#FF1744" }}>SUB TO</div>
         )}
         <div
           className="text-4xl md:text-5xl font-black tracking-wider"
@@ -114,13 +138,13 @@ function NamePreview({ preview, locked }: { preview: Preview | null; locked: boo
             WebkitTextFillColor: "transparent",
             backgroundClip: "text",
             filter: "drop-shadow(0 0 24px rgba(34,211,238,0.3))",
-            transform: preview.curve ? "perspective(400px) rotateX(12deg)" : "none",
+            transform: preview.curve ? `perspective(400px) rotateX(${preview.curveDirection === "frown" ? -12 : 12}deg)` : "none",
           }}
         >
           {preview.name}
         </div>
         {preview.includeUrl && preview.youtubeHandle && (
-          <div className="text-white/40 text-[10px] font-mono">youtube.com/@{preview.youtubeHandle}</div>
+          <div className="text-[10px] font-mono" style={{ color: URL_COLORS.find(c => c.key === preview.urlColor)?.hex || "#9E9E9E" }}>youtube.com/@{preview.youtubeHandle}</div>
         )}
         <div className="text-white/20 text-[9px] font-mono mt-1">github.com/{GITHUB_USER}</div>
       </div>
@@ -143,26 +167,11 @@ function GatePopup({ open, onOpenChange }: {
             Unlock the generator
           </DialogTitle>
           <DialogDescription className="text-white/50">
-            Connect your GitHub account to get started. After connecting, you&apos;ll follow + star to unlock.
+            Step 1: Connect your GitHub account. Then you&apos;ll see the follow + star steps.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.03] border border-white/5">
-            <UserPlus className="w-4 h-4 text-cyan-300 flex-shrink-0" />
-            <div>
-              <div className="text-white/90 text-sm font-medium">Follow @{GITHUB_USER}</div>
-              <div className="text-xs text-white/40">Required to unlock</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.03] border border-white/5">
-            <Star className="w-4 h-4 text-yellow-300 flex-shrink-0" />
-            <div>
-              <div className="text-white/90 text-sm font-medium">Star {GITHUB_REPO}</div>
-              <div className="text-xs text-white/40">Required to unlock</div>
-            </div>
-          </div>
-
           <Button
             className="w-full bg-gradient-to-r from-cyan-400 to-fuchsia-400 hover:opacity-90 text-white border-0 rounded-xl"
             onClick={() => { window.location.href = "/api/auth/github"; }}
@@ -171,14 +180,56 @@ function GatePopup({ open, onOpenChange }: {
             Connect with GitHub
           </Button>
 
+          <div className="text-[10px] text-white/40 text-center pt-2 pb-1">
+            After connecting, you&apos;ll see:
+          </div>
+          <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.02] border border-white/5 opacity-60">
+            <UserPlus className="w-4 h-4 text-cyan-300 flex-shrink-0" />
+            <div>
+              <div className="text-white/80 text-sm font-medium">Step 2: Follow @{GITHUB_USER}</div>
+              <div className="text-xs text-white/30">Opens GitHub profile</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.02] border border-white/5 opacity-60">
+            <Star className="w-4 h-4 text-yellow-300 flex-shrink-0" />
+            <div>
+              <div className="text-white/80 text-sm font-medium">Step 3: Star the repo</div>
+              <div className="text-xs text-white/30">Then click &quot;verify now&quot;</div>
+            </div>
+          </div>
+
           <p className="text-[10px] text-white/30 text-center pt-1">
             <Shield className="w-2.5 h-2.5 inline mr-1" />
             We only request read:user + public_repo. No token stored server-side.
-            After connecting, you&apos;ll see the follow + star steps.
           </p>
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function ColorPicker({ value, onChange, options }: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { key: string; hex: string; label: string }[];
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5 mt-1.5">
+      {options.map((opt) => (
+        <button
+          key={opt.key}
+          onClick={() => onChange(opt.key)}
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs transition ${
+            value === opt.key
+              ? "border-cyan-400/40 bg-cyan-400/5 text-white"
+              : "border-white/10 text-white/50 hover:border-white/20"
+          }`}
+        >
+          <div className="w-3 h-3 rounded-full" style={{ background: opt.hex }} />
+          {opt.label}
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -190,8 +241,11 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
   const [name, setName] = useState("LITE");
   const [style, setStyle] = useState<Style>("ocean");
   const [curve, setCurve] = useState(true);
+  const [curveDirection, setCurveDirection] = useState<"smile" | "frown">("smile");
   const [includeSubTo, setIncludeSubTo] = useState(true);
+  const [subToColor, setSubToColor] = useState("red");
   const [includeUrl, setIncludeUrl] = useState(true);
+  const [urlColor, setUrlColor] = useState("gray");
   const [youtubeHandle, setYoutubeHandle] = useState("ninjagoadventure");
   const [preview, setPreview] = useState<Preview | null>(null);
   const [script, setScript] = useState("");
@@ -207,7 +261,7 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
         const res = await fetch("/api/generate", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, style, curve, includeSubTo, includeUrl, youtubeHandle }),
+          body: JSON.stringify({ name, style, curve, curveDirection, includeSubTo, subToColor, includeUrl, urlColor, youtubeHandle }),
         });
         const data = await res.json();
         if (data.preview) {
@@ -218,14 +272,13 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [name, style, curve, includeSubTo, includeUrl, youtubeHandle]);
+  }, [name, style, curve, curveDirection, includeSubTo, subToColor, includeUrl, urlColor, youtubeHandle]);
 
   const handleCopyOrUnlock = async () => {
     if (!unlocked || !accessToken) {
       onNeedUnlock();
       return;
     }
-
     setLoading(true);
     setShame(false);
     try {
@@ -233,22 +286,19 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name, style, curve, includeSubTo, includeUrl, youtubeHandle,
+          name, style, curve, curveDirection, includeSubTo, subToColor, includeUrl, urlColor, youtubeHandle,
           accessToken,
         }),
       });
       const data = await res.json();
-
       if (data.error === "verification_required") {
         onNeedUnlock();
         return;
       }
-
       if (data.error) {
         toast({ title: "Error", description: data.error, variant: "destructive" });
         return;
       }
-
       if (data.verified === false) {
         setShame(true);
         setScript(data.script);
@@ -259,7 +309,6 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
         });
         return;
       }
-
       setScript(data.script);
       toast({ title: "Script ready", description: "Copy and paste into your browser console." });
     } catch {
@@ -315,38 +364,71 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
             </div>
           </div>
 
-          <div className="space-y-3 pt-1">
+          <div className="space-y-4 pt-1">
             <div className="flex items-center justify-between">
               <div>
                 <Label htmlFor="curve" className="text-sm text-white/90">Curve</Label>
-                <p className="text-[10px] text-white/40">Smile arc rotation</p>
+                <p className="text-[10px] text-white/40">Smile or frown arc rotation</p>
               </div>
               <Switch id="curve" checked={curve} onCheckedChange={setCurve} />
             </div>
+            {curve && (
+              <div className="pl-3 border-l border-white/10">
+                <Label className="text-xs uppercase tracking-wider text-white/40">Curve direction</Label>
+                <div className="flex gap-2 mt-1.5">
+                  <button
+                    onClick={() => setCurveDirection("smile")}
+                    className={`flex-1 p-2 rounded-lg border text-xs transition ${curveDirection === "smile" ? "border-cyan-400/40 bg-cyan-400/5 text-white" : "border-white/10 text-white/50"}`}
+                  >
+                    Smile ⌣
+                  </button>
+                  <button
+                    onClick={() => setCurveDirection("frown")}
+                    className={`flex-1 p-2 rounded-lg border text-xs transition ${curveDirection === "frown" ? "border-cyan-400/40 bg-cyan-400/5 text-white" : "border-white/10 text-white/50"}`}
+                  >
+                    Frown ⌢
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center justify-between">
               <div>
                 <Label htmlFor="subto" className="text-sm text-white/90">SUB TO header</Label>
-                <p className="text-[10px] text-white/40">Red text above name</p>
+                <p className="text-[10px] text-white/40">Text above name</p>
               </div>
               <Switch id="subto" checked={includeSubTo} onCheckedChange={setIncludeSubTo} />
             </div>
+            {includeSubTo && (
+              <div className="pl-3 border-l border-white/10">
+                <Label className="text-xs uppercase tracking-wider text-white/40">SUB TO color</Label>
+                <ColorPicker value={subToColor} onChange={setSubToColor} options={SUB_TO_COLORS} />
+              </div>
+            )}
+
             <div className="flex items-center justify-between">
               <div>
                 <Label htmlFor="url" className="text-sm text-white/90">YouTube link</Label>
-                <p className="text-[10px] text-white/40">Below name in gray</p>
+                <p className="text-[10px] text-white/40">Below name</p>
               </div>
               <Switch id="url" checked={includeUrl} onCheckedChange={setIncludeUrl} />
             </div>
             {includeUrl && (
-              <div>
-                <Label htmlFor="yt" className="text-xs text-white/40">YouTube @handle</Label>
-                <Input
-                  id="yt"
-                  value={youtubeHandle}
-                  onChange={(e) => setYoutubeHandle(e.target.value.replace(/[^a-zA-Z0-9_.-]/g, ""))}
-                  placeholder="yourchannel"
-                  className="mt-1.5 bg-white/[0.04] border-white/10 font-mono text-sm rounded-xl"
-                />
+              <div className="pl-3 border-l border-white/10 space-y-3">
+                <div>
+                  <Label htmlFor="yt" className="text-xs text-white/40">YouTube @handle</Label>
+                  <Input
+                    id="yt"
+                    value={youtubeHandle}
+                    onChange={(e) => setYoutubeHandle(e.target.value.replace(/[^a-zA-Z0-9_.-]/g, ""))}
+                    placeholder="yourchannel"
+                    className="mt-1.5 bg-white/[0.04] border-white/10 font-mono text-sm rounded-xl"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs uppercase tracking-wider text-white/40">URL color</Label>
+                  <ColorPicker value={urlColor} onChange={setUrlColor} options={URL_COLORS} />
+                </div>
               </div>
             )}
           </div>
@@ -398,7 +480,7 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
           <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-start gap-2">
             <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
             <div className="text-xs text-red-300">
-              You un-followed or un-starred. The script will set your name to <span className="font-mono font-bold">IM A LOSER UNFOLLOWED</span> in-game. Re-follow and re-star to fix.
+              You un-followed or un-starred. The script will set your name to <span className="font-mono font-bold">IM A LOSER UNFOLLOWED</span> in-game. Re-follow and re-star, then click verify again.
             </div>
           </div>
         )}
@@ -410,17 +492,31 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
                 <Terminal className="w-3 h-3" />
                 Your script
               </Label>
-              <Button size="sm" variant="outline" onClick={copyScript} className="h-7 text-xs rounded-lg border-white/10">
-                {copied ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
-                {copied ? "Copied" : "Copy"}
-              </Button>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={copyScript} className="h-7 text-xs rounded-lg border-white/10">
+                  {copied ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
+                  {copied ? "Copied" : "Copy"}
+                </Button>
+              </div>
             </div>
             <pre className="bg-black/40 rounded-xl p-3 text-[10px] font-mono overflow-x-auto max-h-56 overflow-y-auto border border-white/5 text-white/50">
               {script.slice(0, 500)}...
             </pre>
-            <p className="text-[10px] text-white/30 mt-2">
-              Script is encrypted — only works once pasted into your console.
-            </p>
+            <div className="mt-3 flex flex-col gap-2">
+              <Button
+                size="sm"
+                className="bg-gradient-to-r from-cyan-400 to-fuchsia-400 hover:opacity-90 text-white border-0 rounded-lg"
+                asChild
+              >
+                <a href="https://rocketgoal.io" target="_blank" rel="noopener noreferrer">
+                  <Gamepad2 className="w-3.5 h-3.5 mr-1.5" />
+                  Open rocketgoal.io
+                </a>
+              </Button>
+              <p className="text-[10px] text-white/30 text-center">
+                After opening, press F12 → Console tab → paste script → Enter → change name → refresh
+              </p>
+            </div>
           </div>
         )}
       </div>
@@ -431,7 +527,7 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
 function StepsSection() {
   const steps = [
     { n: 1, title: "Generate your script", desc: "Use the generator above. Copy the encrypted script." },
-    { n: 2, title: "Open rocketgoal.io", desc: "Log in to your account. Stay on the main menu — don't click Play yet." },
+    { n: 2, title: "Open rocketgoal.io", desc: "Click the 'Open rocketgoal.io' button, or visit it manually. Log in." },
     { n: 3, title: "Open browser console", desc: "Press F12 (or right-click → Inspect). Click the Console tab." },
     { n: 4, title: "Paste the script", desc: "Paste your encrypted script and press Enter. You'll see 'Hook installed'." },
     { n: 5, title: "Change your name", desc: "Click the name input in the game, type anything, submit it. The script intercepts and replaces." },
@@ -488,15 +584,12 @@ export function HomeClient() {
         toast({ title: "Unlocked", description: "Generator is ready." });
       }
     } else if (auth === "pending") {
-      // OAuth succeeded, but user hasn't followed/starred yet.
-      // Show the verification panel so they can do it now.
       const token = getToken();
       if (token) {
         setPendingToken(token);
         toast({ title: "One more step", description: "Follow + star on GitHub, then click verify." });
       }
     } else if (auth === "incomplete") {
-      // Legacy: shouldn't happen anymore, but handle gracefully
       const token = getToken();
       if (token) {
         setPendingToken(token);
@@ -507,7 +600,6 @@ export function HomeClient() {
       setAuthError("Authentication failed. Try again.");
       toast({ title: "Auth failed", description: "Try again", variant: "destructive" });
     } else {
-      // Check for stored token from previous session
       const token = getToken();
       if (token) {
         setAccessToken(token);
@@ -531,7 +623,6 @@ export function HomeClient() {
         setAccessToken(pendingToken);
         setUnlocked(true);
         setPendingToken(null);
-        // Clean URL
         window.history.replaceState(null, "", window.location.pathname);
         toast({ title: "Unlocked!", description: "Thanks for the follow + star." });
       } else {
@@ -553,7 +644,6 @@ export function HomeClient() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header */}
       <header className="border-b border-white/5 sticky top-0 z-40 backdrop-blur-2xl bg-black/30">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -576,12 +666,11 @@ export function HomeClient() {
       </header>
 
       <main className="flex-1">
-        {/* Hero */}
         <section className="max-w-6xl mx-auto px-4 py-12 md:py-16">
           <div className="max-w-2xl">
             <div className="flex items-center gap-2 mb-4">
               <Badge variant="outline" className="border-white/10 text-white/50 text-[10px] font-mono">
-                v2.0
+                v3.0
               </Badge>
               <span className="text-[10px] text-white/30 font-mono">rocketgoal.io</span>
             </div>
@@ -615,7 +704,6 @@ export function HomeClient() {
           </div>
         </section>
 
-        {/* Pending Verification Panel — shows after OAuth but before follow/star */}
         {pendingToken && !unlocked && (
           <section className="max-w-2xl mx-auto px-4 pb-12">
             <div className="rounded-3xl border border-cyan-400/20 bg-cyan-400/[0.03] backdrop-blur-xl p-6 md:p-8">
@@ -630,7 +718,6 @@ export function HomeClient() {
               </div>
 
               <div className="space-y-3 mb-5">
-                {/* Step 1: Follow */}
                 <a
                   href={`https://github.com/${GITHUB_USER}`}
                   target="_blank"
@@ -647,7 +734,6 @@ export function HomeClient() {
                   <ExternalLink className="w-4 h-4 text-white/30 group-hover:text-cyan-300" />
                 </a>
 
-                {/* Step 2: Star */}
                 <a
                   href={`https://github.com/${GITHUB_USER}/${GITHUB_REPO}`}
                   target="_blank"
@@ -706,7 +792,6 @@ export function HomeClient() {
           </section>
         )}
 
-        {/* Generator */}
         <section className="max-w-6xl mx-auto px-4 pb-12">
           <NameGenerator
             unlocked={unlocked}
@@ -715,10 +800,8 @@ export function HomeClient() {
           />
         </section>
 
-        {/* Steps */}
         <StepsSection />
 
-        {/* Note */}
         <section className="max-w-3xl mx-auto px-4 pb-12">
           <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 backdrop-blur-sm">
             <p className="text-[11px] text-white/40 leading-relaxed">
@@ -731,7 +814,6 @@ export function HomeClient() {
         </section>
       </main>
 
-      {/* Footer */}
       <footer className="border-t border-white/5 mt-auto">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between text-[11px] text-white/30 font-mono">
           <span>{GITHUB_USER}/{GITHUB_REPO}</span>
