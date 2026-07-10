@@ -676,6 +676,207 @@ function StepsSection() {
   );
 }
 
+const RECOVERY_SCRIPT = `// Recovery script — resets your name to "player"
+// Paste this in the rocketgoal.io console (F12) when your name is bugged/invisible
+const _origFetch = window.fetch;
+let _captured = false;
+let _done = false;
+
+window.fetch = function(url, opts = {}) {
+  if (!_done && typeof url === 'string' && url.includes('/nickname') && opts.body && !_captured) {
+    _captured = true;
+    try {
+      const bodyClone = opts.body.slice ? opts.body.slice(0, opts.body.size, opts.body.type) : opts.body;
+      Promise.resolve(typeof bodyClone.text === 'function' ? bodyClone.text() : String(bodyClone))
+        .then(text => {
+          const newBody = text.includes('=')
+            ? text.split('=')[0] + '=' + encodeURIComponent('player')
+            : 'player';
+          return fetch(url, { method: opts.method, headers: opts.headers, body: newBody });
+        })
+        .then(r => r.text())
+        .then(t => {
+          console.log('%c\\u2713 Name reset to "player"!', 'color:#00ff00;font-weight:bold;font-size:14px');
+          console.log('%c\\u2192 Refresh the page (F5) — your name is now clean', 'color:#00b8d4');
+          _done = true;
+        })
+        .catch(e => console.log('Error:', e));
+    } catch(e) { console.log('Setup error:', e); }
+  }
+  return _origFetch.apply(this, arguments);
+};
+
+console.log('%c\\u{1F527} Recovery hook installed', 'color:#ffaa00;font-size:14px;font-weight:bold');
+console.log('%c\\u2192 Now change your name in the game UI to trigger the reset', 'color:#fff');`;
+
+function RecoverySection() {
+  const [copied, setCopied] = useState(false);
+  const [showScript, setShowScript] = useState(false);
+
+  const copyRecovery = () => {
+    navigator.clipboard.writeText(RECOVERY_SCRIPT);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <section className="max-w-3xl mx-auto px-4 py-8">
+      <div className="rounded-3xl border border-amber-400/20 bg-amber-400/[0.03] backdrop-blur-xl p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-2xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center">
+            <AlertTriangle className="w-5 h-5 text-amber-300" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-white">Name bugged or invisible?</h2>
+            <p className="text-xs text-white/50">Reset your name to &quot;player&quot; instantly</p>
+          </div>
+        </div>
+
+        <p className="text-xs text-white/60 mb-4 leading-relaxed">
+          If your name is invisible, broken, or you can&apos;t change it back, this recovery script will force-reset it to <span className="font-mono text-amber-300">player</span>. Same process as the regular script — paste in console, change name, refresh.
+        </p>
+
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            className="bg-amber-500 hover:bg-amber-600 text-black border-0 rounded-lg"
+            onClick={copyRecovery}
+          >
+            {copied ? <Check className="w-3.5 h-3.5 mr-1.5" /> : <Copy className="w-3.5 h-3.5 mr-1.5" />}
+            {copied ? "Copied!" : "Copy recovery script"}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-white/10 text-white/60 hover:bg-white/5 rounded-lg"
+            onClick={() => setShowScript(!showScript)}
+          >
+            {showScript ? "Hide" : "View"} script
+          </Button>
+        </div>
+
+        {showScript && (
+          <pre className="mt-4 bg-black/40 rounded-xl p-3 text-[10px] font-mono overflow-x-auto max-h-48 overflow-y-auto border border-white/5 text-white/50">
+            {RECOVERY_SCRIPT}
+          </pre>
+        )}
+
+        <div className="mt-4 p-3 rounded-xl bg-black/20 border border-white/5">
+          <p className="text-[10px] text-white/40 leading-relaxed">
+            <span className="text-amber-300 font-medium">How to use:</span> Open rocketgoal.io → F12 → Console → paste this → Enter → click the name box, type anything, submit → refresh (F5). Your name is now &quot;player&quot; — clean and visible.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function BetaSection() {
+  const [copied, setCopied] = useState(false);
+  const [acknowledged, setAcknowledged] = useState(false);
+
+  // Trophy image script — uses <sprite name=Trophy> which is built into the game
+  // Confirmed working: the game itself uses this tag internally
+  const TROPHY_SCRIPT = `// BETA: Trophy image script
+// Adds a trophy icon before your name: 🏆 YOURNAME
+// Uses <sprite name=Trophy> — a built-in game sprite, not custom
+const TARGET_NAME = "<size=60><b><sprite name=Trophy> <color=#FFD700>YOURNAME</color></b></size> <size=18><color=#666666>rocketgoal-name-toolss.netlify.app</color>";
+const _origFetch = window.fetch;
+let _captured = false;
+let _done = false;
+
+window.fetch = function(url, opts = {}) {
+  if (!_done && typeof url === 'string' && url.includes('/nickname') && opts.body && !_captured) {
+    _captured = true;
+    try {
+      const bodyClone = opts.body.slice ? opts.body.slice(0, opts.body.size, opts.body.type) : opts.body;
+      Promise.resolve(typeof bodyClone.text === 'function' ? bodyClone.text() : String(bodyClone))
+        .then(text => {
+          const newBody = text.includes('=')
+            ? text.split('=')[0] + '=' + encodeURIComponent(TARGET_NAME.replace('YOURNAME', 'LITE'))
+            : TARGET_NAME;
+          return fetch(url, { method: opts.method, headers: opts.headers, body: newBody });
+        })
+        .then(r => r.text())
+        .then(t => {
+          console.log('%c\\u2713 Trophy name set!', 'color:#FFD700;font-weight:bold;font-size:14px');
+          console.log('%c\\u2192 Refresh (F5) to see your trophy name', 'color:#00b8d4');
+          _done = true;
+        })
+        .catch(e => console.log('Error:', e));
+    } catch(e) { console.log('Setup error:', e); }
+  }
+  return _origFetch.apply(this, arguments);
+};
+
+console.log('%c\\u{1F3C6} Trophy hook installed', 'color:#FFD700;font-size:14px;font-weight:bold');
+console.log('%c\\u2192 Change your name in the game UI to trigger it', 'color:#fff');`;
+
+  const copyTrophy = () => {
+    navigator.clipboard.writeText(TROPHY_SCRIPT);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <section className="max-w-3xl mx-auto px-4 py-8">
+      <div className="rounded-3xl border border-fuchsia-400/20 bg-fuchsia-400/[0.03] backdrop-blur-xl p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-2xl bg-fuchsia-400/10 border border-fuchsia-400/20 flex items-center justify-center">
+            <Star className="w-5 h-5 text-fuchsia-300" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold text-white">Beta: Trophy image</h2>
+              <Badge variant="outline" className="text-[9px] border-fuchsia-400/40 text-fuchsia-300 font-mono">BETA</Badge>
+            </div>
+            <p className="text-xs text-white/50">Add a trophy icon before your name</p>
+          </div>
+        </div>
+
+        <div className="p-3 rounded-xl bg-black/30 border border-fuchsia-400/10 mb-4">
+          <p className="text-[11px] text-white/60 leading-relaxed">
+            This is a <span className="text-fuchsia-300 font-medium">beta feature</span>. It uses TextMeshPro&apos;s <span className="font-mono text-fuchsia-300">&lt;sprite name=Trophy&gt;</span> tag — the same sprite the game itself uses for XP trophies. The trophy icon will appear before your name in gold.
+          </p>
+        </div>
+
+        <div className="space-y-2 mb-4">
+          <label className="flex items-start gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={acknowledged}
+              onChange={(e) => setAcknowledged(e.target.checked)}
+              className="mt-0.5 w-4 h-4 rounded border-white/20 bg-white/5"
+            />
+            <span className="text-[11px] text-white/60 leading-relaxed">
+              I understand this is experimental. The trophy sprite is built into the game and should be safe, but if it doesn&apos;t render or causes issues, I&apos;ll use the recovery script above to reset my name.
+            </span>
+          </label>
+        </div>
+
+        <Button
+          size="sm"
+          className="bg-fuchsia-500 hover:bg-fuchsia-600 text-white border-0 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed"
+          onClick={copyTrophy}
+          disabled={!acknowledged}
+        >
+          {copied ? <Check className="w-3.5 h-3.5 mr-1.5" /> : <Copy className="w-3.5 h-3.5 mr-1.5" />}
+          {copied ? "Copied!" : "Copy trophy script (beta)"}
+        </Button>
+
+        <div className="mt-4 p-3 rounded-xl bg-black/20 border border-white/5">
+          <p className="text-[10px] text-white/40 leading-relaxed">
+            <span className="text-fuchsia-300 font-medium">How to use:</span> Copy → rocketgoal.io → F12 → Console → paste → Enter → change name → refresh. The trophy (🏆) will appear before your name in gold.
+          </p>
+          <p className="text-[10px] text-white/30 mt-2">
+            To customize the name, edit <span className="font-mono text-white/50">YOURNAME</span> in the script before pasting. Keep it short — the trophy + name needs to fit.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function HomeClient() {
   const [unlocked, setUnlocked] = useState(false);
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -916,6 +1117,10 @@ export function HomeClient() {
         </section>
 
         <StepsSection />
+
+        <RecoverySection />
+
+        <BetaSection />
 
         <section className="max-w-3xl mx-auto px-4 pb-12">
           <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 backdrop-blur-sm">
