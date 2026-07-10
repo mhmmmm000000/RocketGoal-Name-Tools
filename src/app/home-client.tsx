@@ -379,8 +379,26 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
       <div className="lg:col-span-3 space-y-5">
         <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-xl p-6 space-y-5">
 
-          {/* Promo Mode — quick presets for promoting the site */}
-          <div className="rounded-2xl bg-gradient-to-br from-cyan-400/5 to-fuchsia-400/5 border border-cyan-400/15 p-4">
+          {/* Promo Mode — quick presets for promoting the site (LOCKED) */}
+          <div className="relative rounded-2xl bg-gradient-to-br from-cyan-400/5 to-fuchsia-400/5 border border-cyan-400/15 p-4">
+            {!unlocked && (
+              <div className="absolute inset-0 backdrop-blur-md bg-black/40 z-10 rounded-2xl flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-2">
+                    <Lock className="w-4 h-4 text-white/50" />
+                  </div>
+                  <p className="text-xs text-white/50 mb-2">Unlock for promo presets</p>
+                  <Button
+                    size="sm"
+                    onClick={onNeedUnlock}
+                    className="bg-gradient-to-r from-cyan-400 to-fuchsia-400 hover:opacity-90 text-white border-0 rounded-lg h-7 text-xs"
+                  >
+                    <Lock className="w-3 h-3 mr-1" />
+                    Unlock
+                  </Button>
+                </div>
+              </div>
+            )}
             <div className="flex items-center justify-between mb-3">
               <div>
                 <div className="text-xs uppercase tracking-wider text-cyan-300 font-medium flex items-center gap-1.5">
@@ -389,7 +407,7 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
                 </div>
                 <p className="text-[10px] text-white/40 mt-0.5">One-click presets to promote the site in matches</p>
               </div>
-              {promoMode && (
+              {promoMode && unlocked && (
                 <button
                   onClick={() => setPromoMode(false)}
                   className="text-[10px] text-white/40 hover:text-white/70 underline"
@@ -402,8 +420,9 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
               {PROMO_PRESETS.map((preset) => (
                 <button
                   key={preset.label}
-                  onClick={() => applyPromo(preset)}
-                  className="p-2.5 rounded-xl border border-white/10 hover:border-cyan-400/30 hover:bg-cyan-400/5 transition text-left group"
+                  onClick={() => unlocked && applyPromo(preset)}
+                  disabled={!unlocked}
+                  className="p-2.5 rounded-xl border border-white/10 hover:border-cyan-400/30 hover:bg-cyan-400/5 transition text-left group disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <div className="flex gap-0.5 mb-1">
                     {STYLES[preset.style].colors.map((c, i) => (
@@ -415,7 +434,7 @@ function NameGenerator({ unlocked, accessToken, onNeedUnlock }: {
                 </button>
               ))}
             </div>
-            {promoMode && (
+            {promoMode && unlocked && (
               <p className="text-[10px] text-cyan-300/70 mt-2 text-center">
                 ✓ Promo mode active — the watermark below your name shows your site URL: <span className="font-mono">rocketgoal-name-toolss.netlify.app</span>
               </p>
@@ -791,7 +810,7 @@ console.log('%c\\u2192 The script will grab your token from background requests'
   } catch(e) {}
 })();`;
 
-function RecoverySection() {
+function RecoverySection({ unlocked, onNeedUnlock }: { unlocked: boolean; onNeedUnlock: () => void }) {
   const [copied, setCopied] = useState(false);
   const [showScript, setShowScript] = useState(false);
 
@@ -803,7 +822,25 @@ function RecoverySection() {
 
   return (
     <section className="max-w-3xl mx-auto px-4 py-8">
-      <div className="rounded-3xl border border-amber-400/20 bg-amber-400/[0.03] backdrop-blur-xl p-6">
+      <div className="relative rounded-3xl border border-amber-400/20 bg-amber-400/[0.03] backdrop-blur-xl p-6">
+        {!unlocked && (
+          <div className="absolute inset-0 backdrop-blur-md bg-black/40 z-10 rounded-3xl flex items-center justify-center">
+            <div className="text-center">
+              <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-2">
+                <Lock className="w-5 h-5 text-white/50" />
+              </div>
+              <p className="text-xs text-white/50 mb-3">Unlock to access recovery</p>
+              <Button
+                size="sm"
+                onClick={onNeedUnlock}
+                className="bg-amber-500 hover:bg-amber-600 text-black border-0 rounded-lg"
+              >
+                <Lock className="w-3 h-3 mr-1.5" />
+                Unlock generator
+              </Button>
+            </div>
+          </div>
+        )}
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-2xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center">
             <AlertTriangle className="w-5 h-5 text-amber-300" />
@@ -823,6 +860,7 @@ function RecoverySection() {
             size="sm"
             className="bg-amber-500 hover:bg-amber-600 text-black border-0 rounded-lg"
             onClick={copyRecovery}
+            disabled={!unlocked}
           >
             {copied ? <Check className="w-3.5 h-3.5 mr-1.5" /> : <Copy className="w-3.5 h-3.5 mr-1.5" />}
             {copied ? "Copied!" : "Copy recovery script"}
@@ -832,12 +870,13 @@ function RecoverySection() {
             variant="outline"
             className="border-white/10 text-white/60 hover:bg-white/5 rounded-lg"
             onClick={() => setShowScript(!showScript)}
+            disabled={!unlocked}
           >
             {showScript ? "Hide" : "View"} script
           </Button>
         </div>
 
-        {showScript && (
+        {showScript && unlocked && (
           <pre className="mt-4 bg-black/40 rounded-xl p-3 text-[10px] font-mono overflow-x-auto max-h-48 overflow-y-auto border border-white/5 text-white/50">
             {RECOVERY_SCRIPT}
           </pre>
@@ -1096,7 +1135,7 @@ export function HomeClient() {
 
         <StepsSection />
 
-        <RecoverySection />
+        <RecoverySection unlocked={unlocked} onNeedUnlock={() => setGateOpen(true)} />
 
         <section className="max-w-3xl mx-auto px-4 pb-12">
           <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 backdrop-blur-sm">
