@@ -676,38 +676,105 @@ function StepsSection() {
   );
 }
 
-const RECOVERY_SCRIPT = `// Recovery script — resets your name to "player"
-// Paste this in the rocketgoal.io console (F12) when your name is bugged/invisible
+const RECOVERY_SCRIPT = `// Recovery script — auto-resets your name to "player"
+// NO NEED TO CHANGE YOUR NAME IN THE GAME. Just paste this, wait 10 seconds, refresh.
+// It grabs your auth token from the game's background requests and resets the name for you.
+
 const _origFetch = window.fetch;
-let _captured = false;
+let _token = null;
 let _done = false;
+let _attempts = 0;
 
 window.fetch = function(url, opts = {}) {
-  if (!_done && typeof url === 'string' && url.includes('/nickname') && opts.body && !_captured) {
-    _captured = true;
+  // Step 1: steal the auth token from ANY request the game makes
+  if (!_token && opts && opts.headers) {
     try {
-      const bodyClone = opts.body.slice ? opts.body.slice(0, opts.body.size, opts.body.type) : opts.body;
-      Promise.resolve(typeof bodyClone.text === 'function' ? bodyClone.text() : String(bodyClone))
-        .then(text => {
-          const newBody = text.includes('=')
-            ? text.split('=')[0] + '=' + encodeURIComponent('player')
-            : 'player';
-          return fetch(url, { method: opts.method, headers: opts.headers, body: newBody });
-        })
-        .then(r => r.text())
-        .then(t => {
-          console.log('%c\\u2713 Name reset to "player"!', 'color:#00ff00;font-weight:bold;font-size:14px');
-          console.log('%c\\u2192 Refresh the page (F5) — your name is now clean', 'color:#00b8d4');
-          _done = true;
-        })
-        .catch(e => console.log('Error:', e));
-    } catch(e) { console.log('Setup error:', e); }
+      const h = opts.headers;
+      const auth = h.Authorization || h.authorization || (h.get && h.get('Authorization'));
+      if (auth && auth.startsWith('Bearer ')) {
+        _token = auth.slice(7);
+        console.log('%c\\u2713 Found auth token!', 'color:#00ff00;font-weight:bold');
+        tryReset();
+      }
+    } catch(e) {}
   }
   return _origFetch.apply(this, arguments);
 };
 
-console.log('%c\\u{1F527} Recovery hook installed', 'color:#ffaa00;font-size:14px;font-weight:bold');
-console.log('%c\\u2192 Now change your name in the game UI to trigger the reset', 'color:#fff');`;
+async function tryReset() {
+  if (_done || !_token) return;
+  _attempts++;
+  if (_attempts > 5) {
+    console.log('%c\\u2717 Could not reset — try refreshing and pasting again', 'color:#ff0000;font-weight:bold');
+    return;
+  }
+
+  const nicknameUrl = 'https://us-central1-rocketball-23c12.cloudfunctions.net/v0304_player/nickname';
+
+  // Try multiple body formats the game might use
+  const bodies = [
+    'nickname=player',
+    JSON.stringify({ nickname: 'player' }),
+    JSON.stringify({ Nickname: 'player' }),
+  ];
+
+  for (const body of bodies) {
+    try {
+      const isJson = body.startsWith('{');
+      const res = await fetch(nicknameUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + _token,
+          'Content-Type': isJson ? 'application/json' : 'application/x-www-form-urlencoded',
+          'Accept': '*/*',
+        },
+        body: body,
+      });
+      const text = await res.text();
+      console.log(\`Attempt (\${isJson ? 'JSON' : 'form'}): \${res.status} — \${text.slice(0, 100)}\`);
+      if (res.ok && (text === 'true' || text.includes('true'))) {
+        _done = true;
+        console.log('%c\\u2713\\u2713\\u2713 NAME RESET TO "player"!', 'color:#00ff00;font-weight:bold;font-size:16px');
+        console.log('%c\\u2192 Refresh the page (F5) now — your name is clean', 'color:#00b8d4;font-weight:bold;font-size:14px');
+        console.log('%c\\u2192 After refresh, your name will show as "player"', 'color:#fff');
+        return;
+      }
+    } catch(e) {
+      console.log('Error:', e.message);
+    }
+  }
+
+  // If all formats failed, retry in 2 seconds (token might need to refresh)
+  if (!_done) {
+    console.log('%c\\u21bb Retrying in 2s...', 'color:#ffaa00');
+    setTimeout(tryReset, 2000);
+  }
+}
+
+console.log('%c\\u{1F527} Recovery script installed', 'color:#ffaa00;font-size:14px;font-weight:bold');
+console.log('%c\\u2192 You do NOT need to change your name', 'color:#fff;font-weight:bold');
+console.log('%c\\u2192 Just wait 5-10 seconds for the auto-reset...', 'color:#fff');
+console.log('%c\\u2192 The script will grab your token from background requests', 'color:#888');
+
+// Also try to find token from existing IndexedDB/localStorage (Firebase stores it there)
+(async function checkStoredToken() {
+  try {
+    // Firebase usually stores auth in IndexedDB — try localStorage first as fallback
+    for (const key of Object.keys(localStorage)) {
+      const val = localStorage.getItem(key);
+      if (val && val.includes && val.includes('"stsTokenManager"')) {
+        const parsed = JSON.parse(val);
+        const token = parsed?.stsTokenManager?.accessToken;
+        if (token) {
+          _token = token;
+          console.log('%c\\u2713 Found stored Firebase token!', 'color:#00ff00;font-weight:bold');
+          tryReset();
+          return;
+        }
+      }
+    }
+  } catch(e) {}
+})();`;
 
 function RecoverySection() {
   const [copied, setCopied] = useState(false);
@@ -733,7 +800,7 @@ function RecoverySection() {
         </div>
 
         <p className="text-xs text-white/60 mb-4 leading-relaxed">
-          If your name is invisible, broken, or you can&apos;t change it back, this recovery script will force-reset it to <span className="font-mono text-amber-300">player</span>. Same process as the regular script — paste in console, change name, refresh.
+          If your name is invisible, broken, or you can&apos;t change it back, this script will <span className="text-amber-300 font-medium">automatically reset it to &quot;player&quot;</span> — no need to touch the name box. It grabs your auth token from the game&apos;s background requests and resets the name for you.
         </p>
 
         <div className="flex gap-2">
@@ -763,7 +830,7 @@ function RecoverySection() {
 
         <div className="mt-4 p-3 rounded-xl bg-black/20 border border-white/5">
           <p className="text-[10px] text-white/40 leading-relaxed">
-            <span className="text-amber-300 font-medium">How to use:</span> Open rocketgoal.io → F12 → Console → paste this → Enter → click the name box, type anything, submit → refresh (F5). Your name is now &quot;player&quot; — clean and visible.
+            <span className="text-amber-300 font-medium">How to use:</span> Open rocketgoal.io → F12 → Console → paste this → press Enter. <span className="text-white/70">Do NOT touch the name box.</span> Just wait 5-10 seconds — you&apos;ll see green &quot;NAME RESET&quot; messages. Then refresh (F5). Your name is now &quot;player&quot; — clean and visible.
           </p>
         </div>
       </div>
